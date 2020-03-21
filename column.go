@@ -108,11 +108,6 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(title) < 1 {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-
 	stmt, err := s.db.Prepare("INSERT INTO `Column` (`uuid`, `title`, `list_id`) VALUES (UUID(), ?, (SELECT `id` FROM `List` WHERE `uuid` = ?))")
 
 	if err != nil {

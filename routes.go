@@ -5,4 +5,5 @@ func (s *server) routes() {
 	s.router.HandleFunc("/signin", s.handleSignIn)
 	s.router.HandleFunc("/lists", s.handleLists)
 	s.router.HandleFunc("/columns", s.handleColumns)
+	s.router.HandleFunc("/items", s.handleItems)
 }
