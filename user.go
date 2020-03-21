@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -46,7 +48,15 @@ func generateRandomString(s int) (string, error) {
 func (s *server) getUser(r *http.Request) (string, error) {
 	authorization := r.Header.Get("Authorization")
 
-	row := s.db.QueryRow("SELECT uuid FROM User WHERE id = (SELECT user_id FROM Session WHERE access_token = ?)", authorization)
+	parts := strings.Split(authorization, "Bearer ")
+
+	if len(parts) != 2 {
+		return "", errors.New("Invalid authorization")
+	}
+
+	token := parts[1]
+
+	row := s.db.QueryRow("SELECT uuid FROM User WHERE id = (SELECT user_id FROM Session WHERE access_token = ?)", token)
 
 	var userID string
 
@@ -116,6 +126,7 @@ func (s *server) handleSignUp(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleSignIn(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
 	}
 
 	email := r.FormValue("email")
@@ -161,5 +172,15 @@ func (s *server) handleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(accessToken)
+	type response struct {
+		ID          string `json:"id"`
+		Email       string `json:"email"`
+		AccessToken string `json:"accessToken"`
+	}
+
+	json.NewEncoder(w).Encode(response{
+		ID:          userID,
+		Email:       email,
+		AccessToken: accessToken,
+	})
 }

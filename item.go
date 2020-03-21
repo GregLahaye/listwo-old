@@ -31,6 +31,8 @@ func (s *server) handleItems(w http.ResponseWriter, r *http.Request) {
 		s.handleGetItems(w, r)
 	case http.MethodPost:
 		s.handleCreateItem(w, r)
+	case http.MethodOptions:
+		w.WriteHeader(http.StatusOK)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}

@@ -30,6 +30,8 @@ func (s *server) handleColumns(w http.ResponseWriter, r *http.Request) {
 		s.handleGetColumns(w, r)
 	case http.MethodPost:
 		s.handleCreateColumn(w, r)
+	case http.MethodOptions:
+		w.WriteHeader(http.StatusOK)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}

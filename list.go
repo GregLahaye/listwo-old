@@ -10,12 +10,61 @@ type list struct {
 	Title string `json:"title"`
 }
 
+func (s *server) handleList(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		s.handleGetList(w, r)
+	case http.MethodOptions:
+		w.WriteHeader(http.StatusOK)
+	default:
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+	}
+}
+
+func (s *server) handleGetList(w http.ResponseWriter, r *http.Request) {
+	userID, err := s.getUser(r)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	values := r.URL.Query()
+
+	listID := values.Get("list")
+
+	if listID == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	if !s.ownsList(userID, listID) {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	row := s.db.QueryRow("SELECT `uuid`, `title` FROM `List` WHERE `uuid` = ?", listID)
+
+	var list list
+
+	err = row.Scan(&list.ID, &list.Title)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(list)
+}
+
 func (s *server) handleLists(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		s.handleGetLists(w, r)
 	case http.MethodPost:
 		s.handleCreateList(w, r)
+	case http.MethodOptions:
+		w.WriteHeader(http.StatusOK)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
