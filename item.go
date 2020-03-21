@@ -157,5 +157,13 @@ func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(itemID)
+	type response struct {
+		ID    string `json:"id"`
+		Title string `json:"title"`
+	}
+
+	json.NewEncoder(w).Encode(response{
+		ID:    itemID,
+		Title: title,
+	})
 }

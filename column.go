@@ -142,5 +142,13 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(columnID)
+	type response struct {
+		ID    string `json:"id"`
+		Title string `json:"title"`
+	}
+
+	json.NewEncoder(w).Encode(response{
+		ID:    columnID,
+		Title: title,
+	})
 }
