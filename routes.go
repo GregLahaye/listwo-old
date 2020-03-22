@@ -19,9 +19,7 @@ func handleCORS(h http.HandlerFunc) http.HandlerFunc {
 		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
 		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PATCH, DELETE")
 
-		if os.Getenv("LISTWO_ENV") == "development" {
-			w.Header().Add("Access-Control-Allow-Origin", "*")
-		}
+		w.Header().Add("Access-Control-Allow-Origin", os.Getenv("LISTWO_API_ALLOW_ORIGIN"))
 
 		h(w, r)
 	}
