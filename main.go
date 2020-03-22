@@ -29,5 +29,8 @@ func main() {
 
 	s.routes()
 
-	log.Fatal(http.ListenAndServe(":8080", s.router))
+	port := os.Getenv("PORT")
+	addr := ":" + port
+
+	log.Fatal(http.ListenAndServe(addr, s.router))
 }
