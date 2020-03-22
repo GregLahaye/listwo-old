@@ -32,6 +32,8 @@ func (s *server) handleColumns(w http.ResponseWriter, r *http.Request) {
 		s.handleCreateColumn(w, r)
 	case http.MethodOptions:
 		w.WriteHeader(http.StatusOK)
+	case http.MethodDelete:
+		s.handleDeleteColumn(w, r)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
@@ -151,4 +153,35 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 		ID:    columnID,
 		Title: title,
 	})
+}
+
+func (s *server) handleDeleteColumn(w http.ResponseWriter, r *http.Request) {
+	userID, err := s.getUser(r)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	columnID := r.FormValue("id")
+
+	if !s.ownsColumn(userID, columnID) {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	stmt, err := s.db.Prepare("DELETE FROM `Column` WHERE `uuid` = ?")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = stmt.Exec(columnID)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(columnID)
 }
