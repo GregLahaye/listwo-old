@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 type item struct {
@@ -12,7 +13,20 @@ type item struct {
 }
 
 func (s *server) ownsColumn(userID, columnID string) bool {
-	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `List` WHERE `id` = (SELECT `list_id` FROM `Column` WHERE uuid = ?))", columnID)
+	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `List` WHERE `id` = (SELECT `list_id` FROM `Column` WHERE `uuid` = ?))", columnID)
+
+	var ownerID string
+
+	err := row.Scan(&ownerID)
+
+	if err != nil {
+		return false
+	}
+
+	return userID == ownerID
+}
+func (s *server) ownsItem(userID, itemID string) bool {
+	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `List` WHERE `id` = (SELECT `list_id` FROM `Column` WHERE id = (SELECT `column_id` FROM `Item` WHERE `uuid` = ?)))", itemID)
 
 	var ownerID string
 
@@ -31,6 +45,8 @@ func (s *server) handleItems(w http.ResponseWriter, r *http.Request) {
 		s.handleGetItems(w, r)
 	case http.MethodPost:
 		s.handleCreateItem(w, r)
+	case http.MethodPatch:
+		s.handleUpdateItem(w, r)
 	case http.MethodOptions:
 		w.WriteHeader(http.StatusOK)
 	default:
@@ -111,28 +127,14 @@ func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stmt, err := s.db.Prepare("INSERT INTO `Item` (`uuid`, `position`, `title`, `column_id`) VALUES (UUID(), 0, ?, (SELECT `id` FROM `Column` WHERE `uuid` = ?))")
+	stmt, err := s.db.Prepare("INSERT INTO `Item` (`uuid`, `position`, `title`, `column_id`) SELECT UUID(), (SELECT IFNULL(MAX(`position`) + 1, 0) FROM `Item` WHERE `column_id` = (SELECT `id` FROM `Column` WHERE `uuid` = ?)), ?, (SELECT `id` FROM `Column` WHERE `uuid` = ?)")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	result, err := stmt.Exec(title, columnID)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	stmt, err = s.db.Prepare("UPDATE `Item` SET `position` = `position` + 1 WHERE `column_id` = (SELECT `id` FROM `Column` WHERE `uuid` = ?)")
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	_, err = stmt.Exec(columnID)
+	result, err := stmt.Exec(columnID, title, columnID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -146,11 +148,12 @@ func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	row := s.db.QueryRow("SELECT `uuid` FROM `Item` WHERE `id` = ?", itemPK)
+	row := s.db.QueryRow("SELECT `uuid`, `position` FROM `Item` WHERE `id` = ?", itemPK)
 
 	var itemID string
+	var position int
 
-	err = row.Scan(&itemID)
+	err = row.Scan(&itemID, &position)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -158,12 +161,92 @@ func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type response struct {
-		ID    string `json:"id"`
-		Title string `json:"title"`
+		ID       string `json:"id"`
+		Position int    `json:"position"`
+		Title    string `json:"title"`
 	}
 
 	json.NewEncoder(w).Encode(response{
-		ID:    itemID,
-		Title: title,
+		ID:       itemID,
+		Position: position,
+		Title:    title,
 	})
+}
+
+func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
+	userID, err := s.getUser(r)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	id := r.FormValue("id")
+
+	if !s.ownsItem(userID, id) {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	srcStr := r.FormValue("src")
+	dstStr := r.FormValue("dst")
+
+	if id == "" || (srcStr == "" || dstStr == "") {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	src, err := strconv.ParseInt(srcStr, 10, 64)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	dst, err := strconv.ParseInt(dstStr, 10, 64)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	dir := -1
+	lower := src
+	upper := dst
+
+	if src > dst {
+		dir = 1
+		lower = dst
+		upper = src
+	}
+
+	stmt, err := s.db.Prepare("UPDATE `Item` i SET `position` = `position` + ? WHERE `column_id` = i.column_id AND `position` >= ? and `position` <= ?")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = stmt.Exec(dir, lower, upper)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	stmt, err = s.db.Prepare("UPDATE `Item` SET `position` = ? WHERE `uuid` = ?")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = stmt.Exec(dst, id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

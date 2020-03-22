@@ -17,6 +17,7 @@ func (s *server) routes() {
 func handleCORS(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
+		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PATCH")
 
 		if os.Getenv("LISTWO_ENV") == "development" {
 			w.Header().Add("Access-Control-Allow-Origin", "*")
