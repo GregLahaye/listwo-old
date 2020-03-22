@@ -188,6 +188,17 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	row := s.db.QueryRow("SELECT `column_id` FROM `Item` WHERE `uuid` = ?", id)
+
+	var columnPK string
+
+	err = row.Scan(&columnPK)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	srcStr := r.FormValue("src")
 	dstStr := r.FormValue("dst")
 
@@ -220,14 +231,14 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		upper = src
 	}
 
-	stmt, err := s.db.Prepare("UPDATE `Item` i SET `position` = `position` + ? WHERE `column_id` = i.column_id AND `position` >= ? and `position` <= ?")
+	stmt, err := s.db.Prepare("UPDATE `Item` SET `position` = `position` + ? WHERE `column_id` = ? AND `position` >= ? AND `position` <= ?")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	_, err = stmt.Exec(dir, lower, upper)
+	_, err = stmt.Exec(dir, columnPK, lower, upper)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
