@@ -49,6 +49,8 @@ func (s *server) handleItems(w http.ResponseWriter, r *http.Request) {
 		s.handleUpdateItem(w, r)
 	case http.MethodOptions:
 		w.WriteHeader(http.StatusOK)
+	case http.MethodDelete:
+		s.handleDeleteItem(w, r)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
@@ -260,4 +262,60 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
+	userID, err := s.getUser(r)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	id := r.FormValue("id")
+
+	row := s.db.QueryRow("SELECT `position`, `column_id` FROM `Item` WHERE `uuid` = ?", id)
+
+	var position, columnPK string
+
+	err = row.Scan(&position, &columnPK)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !s.ownsItem(userID, id) {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	stmt, err := s.db.Prepare("UPDATE `Item` SET `position` = `position` - 1 WHERE `column_id` = ? AND `position` >= ?")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = stmt.Exec(columnPK, position)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	stmt, err = s.db.Prepare("DELETE FROM `Item` WHERE `uuid` = ?")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = stmt.Exec(id)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(id)
 }
