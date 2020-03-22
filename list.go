@@ -63,6 +63,8 @@ func (s *server) handleLists(w http.ResponseWriter, r *http.Request) {
 		s.handleGetLists(w, r)
 	case http.MethodPost:
 		s.handleCreateList(w, r)
+	case http.MethodDelete:
+		s.handleDeleteList(w, r)
 	case http.MethodOptions:
 		w.WriteHeader(http.StatusOK)
 	default:
@@ -164,4 +166,33 @@ func (s *server) handleCreateList(w http.ResponseWriter, r *http.Request) {
 		ID:    listID,
 		Title: title,
 	})
+}
+func (s *server) handleDeleteList(w http.ResponseWriter, r *http.Request) {
+	userID, err := s.getUser(r)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	listID := r.FormValue("id")
+
+	if !s.ownsList(userID, listID) {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	stmt, err := s.db.Prepare("DELETE FROM `List` WHERE `uuid` = ?")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	_, err = stmt.Exec(listID)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	json.NewEncoder(w).Encode(listID)
 }
