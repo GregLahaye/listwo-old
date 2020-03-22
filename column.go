@@ -55,7 +55,7 @@ func (s *server) handleGetColumns(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !s.ownsList(userID, listID) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
@@ -106,7 +106,7 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !s.ownsList(userID, listID) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 

@@ -72,7 +72,7 @@ func (s *server) handleGetItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !s.ownsColumn(userID, columnID) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !s.ownsColumn(userID, columnID) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
@@ -184,7 +184,7 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	id := r.FormValue("id")
 
 	if !s.ownsItem(userID, id) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
