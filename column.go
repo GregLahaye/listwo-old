@@ -146,15 +146,12 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type response struct {
-		ID    string `json:"id"`
-		Title string `json:"title"`
-	}
-
-	json.NewEncoder(w).Encode(response{
+	response := column{
 		ID:    columnID,
 		Title: title,
-	})
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
 
 func (s *server) handleDeleteColumn(w http.ResponseWriter, r *http.Request) {

@@ -159,15 +159,12 @@ func (s *server) handleCreateList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type response struct {
-		ID    string `json:"id"`
-		Title string `json:"title"`
-	}
-
-	json.NewEncoder(w).Encode(response{
+	response := list{
 		ID:    listID,
 		Title: title,
-	})
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
 func (s *server) handleDeleteList(w http.ResponseWriter, r *http.Request) {
 	userID, err := s.getUser(r)

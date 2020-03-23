@@ -8,7 +8,7 @@ import (
 
 type item struct {
 	ID       string `json:"id"`
-	Position string `json:"position"`
+	Position int    `json:"position"`
 	Title    string `json:"title"`
 }
 
@@ -162,17 +162,13 @@ func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type response struct {
-		ID       string `json:"id"`
-		Position int    `json:"position"`
-		Title    string `json:"title"`
-	}
-
-	json.NewEncoder(w).Encode(response{
+	response := item{
 		ID:       itemID,
 		Position: position,
 		Title:    title,
-	})
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
 
 func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {

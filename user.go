@@ -11,6 +11,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type user struct {
+	ID          string `json:"id"`
+	Email       string `json:"email"`
+	AccessToken string `json:"accessToken"`
+}
+
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
@@ -172,15 +178,11 @@ func (s *server) handleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	type response struct {
-		ID          string `json:"id"`
-		Email       string `json:"email"`
-		AccessToken string `json:"accessToken"`
-	}
-
-	json.NewEncoder(w).Encode(response{
+	response := user{
 		ID:          userID,
 		Email:       email,
 		AccessToken: accessToken,
-	})
+	}
+
+	json.NewEncoder(w).Encode(response)
 }
