@@ -67,6 +67,8 @@ func (s *server) handleLists(w http.ResponseWriter, r *http.Request) {
 		s.handleDeleteList(w, r)
 	case http.MethodOptions:
 		w.WriteHeader(http.StatusOK)
+	case http.MethodPatch:
+		s.handleUpdateList(w, r)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
@@ -189,6 +191,37 @@ func (s *server) handleDeleteList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = stmt.Exec(listID)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	json.NewEncoder(w).Encode(listID)
+}
+
+func (s *server) handleUpdateList(w http.ResponseWriter, r *http.Request) {
+	userID, err := s.getUser(r)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	listID := r.FormValue("id")
+	title := r.FormValue("title")
+
+	if !s.ownsList(userID, listID) {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	stmt, err := s.db.Prepare("UPDATE `List` SET `title` = ? WHERE `uuid` = ?")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	_, err = stmt.Exec(title, listID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
