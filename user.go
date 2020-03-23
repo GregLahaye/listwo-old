@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -106,7 +107,15 @@ func (s *server) handleSignUp(w http.ResponseWriter, r *http.Request) {
 	_, err = stmt.Exec(email, hash)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		me := err.(*mysql.MySQLError)
+
+		switch me.Number {
+		case 1062:
+			http.Error(w, "An account with that email already exists", http.StatusConflict)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
 		return
 	}
 
