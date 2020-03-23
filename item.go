@@ -12,19 +12,6 @@ type item struct {
 	Title    string `json:"title"`
 }
 
-func (s *server) ownsColumn(userID, columnID string) bool {
-	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `List` WHERE `id` = (SELECT `list_id` FROM `Column` WHERE `uuid` = ?))", columnID)
-
-	var ownerID string
-
-	err := row.Scan(&ownerID)
-
-	if err != nil {
-		return false
-	}
-
-	return userID == ownerID
-}
 func (s *server) ownsItem(userID, itemID string) bool {
 	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `List` WHERE `id` = (SELECT `list_id` FROM `Column` WHERE id = (SELECT `column_id` FROM `Item` WHERE `uuid` = ?)))", itemID)
 
@@ -45,19 +32,19 @@ func (s *server) handleItems(w http.ResponseWriter, r *http.Request) {
 		s.handleGetItems(w, r)
 	case http.MethodPost:
 		s.handleCreateItem(w, r)
+	case http.MethodDelete:
+		s.handleDeleteItem(w, r)
 	case http.MethodPatch:
 		s.handleUpdateItem(w, r)
 	case http.MethodOptions:
 		w.WriteHeader(http.StatusOK)
-	case http.MethodDelete:
-		s.handleDeleteItem(w, r)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
 
 func (s *server) handleGetItems(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -110,7 +97,7 @@ func (s *server) handleGetItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -172,7 +159,7 @@ func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -261,7 +248,7 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)

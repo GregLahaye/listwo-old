@@ -10,8 +10,8 @@ type column struct {
 	Title string `json:"title"`
 }
 
-func (s *server) ownsList(userID, listID string) bool {
-	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `List` WHERE `uuid` = ?)", listID)
+func (s *server) ownsColumn(userID, columnID string) bool {
+	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `List` WHERE `id` = (SELECT `list_id` FROM `Column` WHERE `uuid` = ?))", columnID)
 
 	var ownerID string
 
@@ -30,19 +30,19 @@ func (s *server) handleColumns(w http.ResponseWriter, r *http.Request) {
 		s.handleGetColumns(w, r)
 	case http.MethodPost:
 		s.handleCreateColumn(w, r)
-	case http.MethodOptions:
-		w.WriteHeader(http.StatusOK)
 	case http.MethodDelete:
 		s.handleDeleteColumn(w, r)
 	case http.MethodPatch:
 		s.handleUpdateColumn(w, r)
+	case http.MethodOptions:
+		w.WriteHeader(http.StatusOK)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
 
 func (s *server) handleGetColumns(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -95,7 +95,7 @@ func (s *server) handleGetColumns(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -155,7 +155,7 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleDeleteColumn(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -186,7 +186,7 @@ func (s *server) handleDeleteColumn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleUpdateColumn(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)

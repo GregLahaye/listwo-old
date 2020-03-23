@@ -51,7 +51,7 @@ func generateRandomString(s int) (string, error) {
 	return base64.URLEncoding.EncodeToString(b), err
 }
 
-func (s *server) getUser(r *http.Request) (string, error) {
+func (s *server) getCurrentUser(r *http.Request) (string, error) {
 	authorization := r.Header.Get("Authorization")
 
 	parts := strings.Split(authorization, "Bearer ")
@@ -62,7 +62,7 @@ func (s *server) getUser(r *http.Request) (string, error) {
 
 	token := parts[1]
 
-	row := s.db.QueryRow("SELECT uuid FROM User WHERE id = (SELECT user_id FROM Session WHERE access_token = ?)", token)
+	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `Session` WHERE `access_token` = ?)", token)
 
 	var userID string
 
@@ -140,8 +140,7 @@ func (s *server) handleSignIn(w http.ResponseWriter, r *http.Request) {
 
 	row := s.db.QueryRow("SELECT uuid, password FROM User WHERE email = ?", email)
 
-	var userID string
-	var hash string
+	var userID, hash string
 
 	err := row.Scan(&userID, &hash)
 

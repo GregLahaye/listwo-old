@@ -10,6 +10,20 @@ type list struct {
 	Title string `json:"title"`
 }
 
+func (s *server) ownsList(userID, listID string) bool {
+	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `List` WHERE `uuid` = ?)", listID)
+
+	var ownerID string
+
+	err := row.Scan(&ownerID)
+
+	if err != nil {
+		return false
+	}
+
+	return userID == ownerID
+}
+
 func (s *server) handleList(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -22,7 +36,7 @@ func (s *server) handleList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleGetList(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -65,17 +79,17 @@ func (s *server) handleLists(w http.ResponseWriter, r *http.Request) {
 		s.handleCreateList(w, r)
 	case http.MethodDelete:
 		s.handleDeleteList(w, r)
-	case http.MethodOptions:
-		w.WriteHeader(http.StatusOK)
 	case http.MethodPatch:
 		s.handleUpdateList(w, r)
+	case http.MethodOptions:
+		w.WriteHeader(http.StatusOK)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
 
 func (s *server) handleGetLists(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -114,7 +128,7 @@ func (s *server) handleGetLists(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleCreateList(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -166,8 +180,9 @@ func (s *server) handleCreateList(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(response)
 }
+
 func (s *server) handleDeleteList(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -197,7 +212,7 @@ func (s *server) handleDeleteList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleUpdateList(w http.ResponseWriter, r *http.Request) {
-	userID, err := s.getUser(r)
+	userID, err := s.getCurrentUser(r)
 
 	if err != nil {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
