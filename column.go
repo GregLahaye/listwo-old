@@ -34,6 +34,8 @@ func (s *server) handleColumns(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	case http.MethodDelete:
 		s.handleDeleteColumn(w, r)
+	case http.MethodPatch:
+		s.handleUpdateColumn(w, r)
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
@@ -177,6 +179,38 @@ func (s *server) handleDeleteColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, err = stmt.Exec(columnID)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(columnID)
+}
+
+func (s *server) handleUpdateColumn(w http.ResponseWriter, r *http.Request) {
+	userID, err := s.getUser(r)
+
+	if err != nil {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+
+	columnID := r.FormValue("id")
+	title := r.FormValue("title")
+
+	if !s.ownsColumn(userID, columnID) {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
+	stmt, err := s.db.Prepare("UPDATE `Column` SET `title` = ? WHERE `uuid` = ?")
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = stmt.Exec(title, columnID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
