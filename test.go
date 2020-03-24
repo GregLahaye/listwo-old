@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func testHandler(method, target string, form url.Values) *httptest.ResponseRecorder {
+func testHandler(method, target string, form url.Values, authorized bool) *httptest.ResponseRecorder {
 	db, err := sql.Open("mysql", os.Getenv("MYSQL_MOCK_DSN"))
 
 	if err != nil {
@@ -27,6 +27,10 @@ func testHandler(method, target string, form url.Values) *httptest.ResponseRecor
 	s.routes()
 
 	r := httptest.NewRequest(method, target, strings.NewReader(form.Encode()))
+
+	if authorized {
+		r.Header.Add("Authorization", "Bearer @uth0r1z@t10n_t0k3n")
+	}
 
 	r.Form = form
 

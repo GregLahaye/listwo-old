@@ -166,14 +166,14 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.FormValue("id")
+	itemID := r.FormValue("id")
 
-	if !s.ownsItem(userID, id) {
+	if !s.ownsItem(userID, itemID) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
-	row := s.db.QueryRow("SELECT `column_id` FROM `Item` WHERE `uuid` = ?", id)
+	row := s.db.QueryRow("SELECT `column_id` FROM `Item` WHERE `uuid` = ?", itemID)
 
 	var columnPK string
 
@@ -187,7 +187,7 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	srcStr := r.FormValue("src")
 	dstStr := r.FormValue("dst")
 
-	if id == "" || (srcStr == "" || dstStr == "") {
+	if itemID == "" || (srcStr == "" || dstStr == "") {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -237,7 +237,7 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = stmt.Exec(dst, id)
+	_, err = stmt.Exec(dst, itemID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -255,9 +255,9 @@ func (s *server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.FormValue("id")
+	itemID := r.FormValue("id")
 
-	row := s.db.QueryRow("SELECT `position`, `column_id` FROM `Item` WHERE `uuid` = ?", id)
+	row := s.db.QueryRow("SELECT `position`, `column_id` FROM `Item` WHERE `uuid` = ?", itemID)
 
 	var position, columnPK string
 
@@ -268,7 +268,7 @@ func (s *server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !s.ownsItem(userID, id) {
+	if !s.ownsItem(userID, itemID) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
@@ -293,12 +293,12 @@ func (s *server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = stmt.Exec(id)
+	_, err = stmt.Exec(itemID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	json.NewEncoder(w).Encode(id)
+	json.NewEncoder(w).Encode(itemID)
 }

@@ -102,7 +102,7 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listID := r.FormValue("list")
+	listID := r.FormValue("id")
 	title := r.FormValue("title")
 
 	if listID == "" || title == "" {

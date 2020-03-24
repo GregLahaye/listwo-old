@@ -45,7 +45,7 @@ func (s *server) handleGetList(w http.ResponseWriter, r *http.Request) {
 
 	values := r.URL.Query()
 
-	listID := values.Get("list")
+	listID := values.Get("id")
 
 	if listID == "" {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -191,6 +191,11 @@ func (s *server) handleDeleteList(w http.ResponseWriter, r *http.Request) {
 
 	listID := r.FormValue("id")
 
+	if listID == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
 	if !s.ownsList(userID, listID) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
@@ -221,6 +226,11 @@ func (s *server) handleUpdateList(w http.ResponseWriter, r *http.Request) {
 
 	listID := r.FormValue("id")
 	title := r.FormValue("title")
+
+	if listID == "" || title == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	if !s.ownsList(userID, listID) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)

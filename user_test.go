@@ -11,7 +11,7 @@ func TestHandleSignUp(t *testing.T) {
 	form.Add("email", "barry@example.com")
 	form.Add("password", "Password1")
 
-	w := testHandler("POST", "/signup", form)
+	w := testHandler("POST", "/signup", form, false)
 
 	assert(t, w.Code, http.StatusOK)
 }
@@ -21,7 +21,7 @@ func TestHandleSignUpAlreadyExists(t *testing.T) {
 	form.Add("email", "john@example.com")
 	form.Add("password", "Password1")
 
-	w := testHandler("POST", "/signup", form)
+	w := testHandler("POST", "/signup", form, false)
 
 	assert(t, w.Code, http.StatusConflict)
 }
@@ -31,7 +31,7 @@ func TestHandleSignUpNoEmail(t *testing.T) {
 	form.Add("email", "john@example.com")
 	form.Add("password", "Password1")
 
-	w := testHandler("POST", "/signup", form)
+	w := testHandler("POST", "/signup", form, false)
 
 	assert(t, w.Code, http.StatusConflict)
 }
@@ -41,7 +41,7 @@ func TestHandleSignUpShortPassword(t *testing.T) {
 	form.Add("email", "simon@example.com")
 	form.Add("password", "short")
 
-	w := testHandler("POST", "/signup", form)
+	w := testHandler("POST", "/signup", form, false)
 
 	assert(t, w.Code, http.StatusBadRequest)
 }
@@ -51,7 +51,7 @@ func TestHandleSignIn(t *testing.T) {
 	form.Add("email", "john@example.com")
 	form.Add("password", "Password1")
 
-	w := testHandler("POST", "/signin", form)
+	w := testHandler("POST", "/signin", form, false)
 
 	assert(t, w.Code, http.StatusOK)
 }
@@ -61,7 +61,7 @@ func TestHandleSignInInvalidPassword(t *testing.T) {
 	form.Add("email", "john@example.com")
 	form.Add("password", "NotThePassword")
 
-	w := testHandler("POST", "/signin", form)
+	w := testHandler("POST", "/signin", form, false)
 
 	assert(t, w.Code, http.StatusUnauthorized)
 }
@@ -71,7 +71,7 @@ func TestHandleSignInInvalidEmail(t *testing.T) {
 	form.Add("email", "ghost@example.com")
 	form.Add("password", "Password1")
 
-	w := testHandler("POST", "/signin", form)
+	w := testHandler("POST", "/signin", form, false)
 
 	assert(t, w.Code, http.StatusUnauthorized)
 }
