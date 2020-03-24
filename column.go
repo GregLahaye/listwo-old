@@ -107,6 +107,7 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 
 	if listID == "" || title == "" {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	if !s.ownsList(userID, listID) {

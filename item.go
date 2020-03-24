@@ -109,6 +109,7 @@ func (s *server) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 
 	if columnID == "" || title == "" {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
 	}
 
 	if !s.ownsColumn(userID, columnID) {
