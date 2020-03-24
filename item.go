@@ -167,32 +167,24 @@ func (s *server) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	itemID := r.FormValue("id")
+	dstStr := r.FormValue("dst")
+
+	if itemID == "" || dstStr == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	if !s.ownsItem(userID, itemID) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
-	row := s.db.QueryRow("SELECT `column_id` FROM `Item` WHERE `uuid` = ?", itemID)
+	row := s.db.QueryRow("SELECT `position`, `column_id` FROM `Item` WHERE `uuid` = ?", itemID)
 
+	var src int64
 	var columnPK string
 
-	err = row.Scan(&columnPK)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	srcStr := r.FormValue("src")
-	dstStr := r.FormValue("dst")
-
-	if itemID == "" || (srcStr == "" || dstStr == "") {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-
-	src, err := strconv.ParseInt(srcStr, 10, 64)
+	err = row.Scan(&src, &columnPK)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -257,6 +249,16 @@ func (s *server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 
 	itemID := r.FormValue("id")
 
+	if itemID == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
+	if !s.ownsItem(userID, itemID) {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+
 	row := s.db.QueryRow("SELECT `position`, `column_id` FROM `Item` WHERE `uuid` = ?", itemID)
 
 	var position, columnPK string
@@ -265,11 +267,6 @@ func (s *server) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if !s.ownsItem(userID, itemID) {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
