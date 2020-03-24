@@ -102,7 +102,7 @@ func (s *server) handleCreateColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	listID := r.FormValue("id")
+	listID := r.FormValue("list")
 	title := r.FormValue("title")
 
 	if listID == "" || title == "" {
@@ -164,6 +164,11 @@ func (s *server) handleDeleteColumn(w http.ResponseWriter, r *http.Request) {
 
 	columnID := r.FormValue("id")
 
+	if columnID == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+
 	if !s.ownsColumn(userID, columnID) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
@@ -195,6 +200,11 @@ func (s *server) handleUpdateColumn(w http.ResponseWriter, r *http.Request) {
 
 	columnID := r.FormValue("id")
 	title := r.FormValue("title")
+
+	if columnID == "" || title == "" {
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
 
 	if !s.ownsColumn(userID, columnID) {
 		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
