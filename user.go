@@ -63,7 +63,7 @@ func (s *server) getCurrentUser(r *http.Request) (string, error) {
 
 	token := parts[1]
 
-	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `Session` WHERE `access_token` = ?)", token)
+	row := s.db.QueryRow("SELECT `uuid` FROM `User` WHERE `id` = (SELECT `user_id` FROM `Session` WHERE `access_token` = ?  AND `expires_at` > CURRENT_TIMESTAMP)", token)
 
 	var userID string
 
@@ -172,7 +172,7 @@ func (s *server) handleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stmt, err := s.db.Prepare("INSERT INTO Session (access_token, user_id) VALUES (?, (SELECT id FROM User WHERE uuid = ?))")
+	stmt, err := s.db.Prepare("INSERT INTO `Session` (`access_token`, `expires_at`, `user_id`) VALUES (?, (TIMESTAMPADD(WEEK, 1, CURRENT_TIMESTAMP)), (SELECT `id` FROM `User` WHERE `uuid` = ?))")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
