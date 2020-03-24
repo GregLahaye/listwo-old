@@ -7,13 +7,13 @@ import (
 )
 
 func TestHandleGetItems(t *testing.T) {
-	w := testHandler("GET", "/items?column=kitchen-uuid", nil, true)
+	w := testHandler("GET", "/items?column=laundry-uuid", nil, true)
 
 	assert(t, w.Code, http.StatusOK)
 }
 
 func TestHandleGetItemsUnauthorized(t *testing.T) {
-	w := testHandler("GET", "/items?column=kitchen-uuid", nil, false)
+	w := testHandler("GET", "/items?column=laundry-uuid", nil, false)
 
 	assert(t, w.Code, http.StatusUnauthorized)
 }

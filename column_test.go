@@ -49,7 +49,7 @@ func TestHandleCreateColumn(t *testing.T) {
 func TestHandleCreateColumnUnauthorized(t *testing.T) {
 	form := url.Values{}
 	form.Add("list", "housework-uuid")
-	form.Add("title", "Vacuum Lounge")
+	form.Add("title", "Lounge")
 
 	w := testHandler("POST", "/columns", form, false)
 
@@ -59,7 +59,7 @@ func TestHandleCreateColumnUnauthorized(t *testing.T) {
 func TestHandleCreateColumnForbidden(t *testing.T) {
 	form := url.Values{}
 	form.Add("list", "gardening-uuid")
-	form.Add("title", "Water Roses")
+	form.Add("title", "Roses")
 
 	w := testHandler("POST", "/columns", form, true)
 
@@ -69,7 +69,7 @@ func TestHandleCreateColumnForbidden(t *testing.T) {
 func TestHandleCreateColumnNotFound(t *testing.T) {
 	form := url.Values{}
 	form.Add("list", "ghost-uuid")
-	form.Add("title", "Clear Attic")
+	form.Add("title", "Attic")
 
 	w := testHandler("POST", "/columns", form, true)
 
